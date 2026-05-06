@@ -1,0 +1,78 @@
+task:
+  name: "attachments-example"
+  purpose: "附件下载"
+
+target:
+  site_name: "notice"
+  base_url: "https://example.com"
+  entry_urls:
+    - "https://example.com/notices"
+
+request:
+  method: "GET"
+  type: "static"
+  headers:
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+
+pagination:
+  enabled: false
+  type: "none"
+
+list:
+  item_selector: ".notice"
+  fields:
+    title:
+      selector: ".title::text"
+    publish_time:
+      selector: ".time::text"
+    pdf_url:
+      selector: "a[href$='.pdf']::attr(href)"
+      transform: "absolute_url"
+    word_url:
+      selector: "a[href$='.doc'], a[href$='.docx']::attr(href)"
+      transform: "absolute_url"
+
+media:
+  enabled: true
+  output_dir: "data/media/attachments"
+  parse_attachments: true
+  parse_config:
+    max_chars: 100000
+  resources:
+    - name: "pdfs"
+      type: "attachment"
+      url_fields: ["pdf_url"]
+      filename_prefix: "pdf"
+      default_ext: ".pdf"
+      parse: true
+      include_text: true
+    - name: "words"
+      type: "attachment"
+      url_fields: ["word_url"]
+      filename_prefix: "word"
+      default_ext: ".docx"
+      parse: true
+      include_text: true
+
+dedupe:
+  enabled: true
+  type: "persistent"
+  key_fields: ["title", "publish_time"]
+  path: "data/state/attachments_dedupe.txt"
+
+storage:
+  type: "sqlite"
+  path: "data/output/attachments.db"
+  table: "notices"
+
+resume:
+  enabled: true
+  retry_failed_first: true
+  completed_path: "data/state/attachments_completed_urls.txt"
+  failed_path: "data/state/attachments_failed.jsonl"
+
+logging:
+  enabled: true
+  request_log: "data/logs/attachments_requests.jsonl"
+  error_log: "data/logs/attachments_errors.jsonl"
+  summary_log: "data/logs/attachments_summary.jsonl"

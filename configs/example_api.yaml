@@ -1,0 +1,73 @@
+task:
+  name: "example-api"
+  purpose: "API 数据采集"
+  description: "JSON API 示例，请替换成真实接口"
+
+target:
+  site_name: "jsonplaceholder"
+  base_url: "https://jsonplaceholder.typicode.com"
+  entry_urls:
+    - "https://jsonplaceholder.typicode.com/posts"
+  allowed_domains:
+    - "jsonplaceholder.typicode.com"
+
+request:
+  method: "GET"
+  type: "api"
+  headers:
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    Accept: "application/json"
+  encoding: "auto"
+  timeout:
+    connect: 10
+    read: 30
+
+pagination:
+  enabled: false
+  type: "none"
+
+api:
+  enabled: true
+  data_path: "$"
+  fields:
+    id: "$.id"
+    title: "$.title"
+    body: "$.body"
+    user_id: "$.userId"
+
+detail:
+  enabled: false
+  url_field: "detail_url"
+  keep_on_detail_failed: true
+  fields: {}
+
+cleaning:
+  strip: true
+  normalize_space: true
+  html_unescape: true
+  remove_tracking_params: false
+
+dedupe:
+  enabled: true
+  key_fields:
+    - "id"
+
+rate_limit:
+  delay_min: 0
+  delay_max: 0
+  concurrency: 1
+
+retry:
+  times: 2
+  backoff: 1
+  retry_status:
+    - 429
+    - 500
+    - 502
+    - 503
+    - 504
+
+storage:
+  type: "csv"
+  path: "data/output/example_api.csv"
+  table: "items"

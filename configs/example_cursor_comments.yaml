@@ -1,0 +1,66 @@
+task:
+  name: "cursor-comments-example"
+  purpose: "社交评论采集"
+  description: "通用 cursor/last_id 评论接口示例，需替换为你有权限访问的真实接口"
+
+target:
+  site_name: "social-api"
+  base_url: "https://api.example.com"
+  entry_urls:
+    - "https://api.example.com/comments"
+
+request:
+  method: "GET"
+  type: "api"
+  headers:
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    Accept: "application/json"
+    Authorization: "Bearer YOUR_TOKEN"
+  params:
+    post_id: "POST_ID"
+    limit: 50
+
+pagination:
+  enabled: true
+  type: "cursor"
+  cursor_param: "cursor"
+  cursor_start: ""
+  next_cursor_path: "$.data.next_cursor"
+  max_pages: 20
+
+api:
+  enabled: true
+  data_path: "$.data.comments"
+  fields:
+    comment_id: "$.id"
+    user_name: "$.user.name"
+    user_id: "$.user.id"
+    content: "$.text"
+    publish_time: "$.created_at"
+    like_count: "$.like_count"
+    reply_count: "$.reply_count"
+    avatar_url: "$.user.avatar"
+
+media:
+  enabled: true
+  output_dir: "data/media/comments"
+  resources:
+    - name: "avatars"
+      type: "image"
+      url_fields: ["avatar_url"]
+      filename_prefix: "avatar"
+
+dedupe:
+  enabled: true
+  type: "persistent"
+  key_fields: ["comment_id"]
+  path: "data/state/cursor_comments_dedupe.txt"
+
+storage:
+  type: "jsonl"
+  path: "data/output/cursor_comments.jsonl"
+
+rate_limit:
+  delay_min: 1
+  delay_max: 3
+

@@ -1,0 +1,243 @@
+# 通用爬虫完整配置参考
+# 这份文件主要用于查参数，不建议直接跑。复制需要的部分到自己的任务配置里即可。
+
+task:
+  name: "all-options-reference"          # 任务名称，建议英文/数字/下划线
+  purpose: "信息采集"                    # 可选参考：信息采集 / 数据监控 / 数据归档 / 评论采集 / 视频字幕 / 图片下载 / 附件下载
+  description: "完整配置项说明示例"
+  tags: ["demo", "reference"]            # 当前引擎会忽略，但可用于未来任务管理
+
+target:
+  site_name: "example"                   # 站点名称
+  base_url: "https://example.com"        # 根地址，用于相对 URL 转绝对 URL
+  entry_urls:                            # 入口 URL，可以有多个
+    - "https://example.com/list"
+  allowed_domains:                       # 允许域名，当前作为配置约定，后续可用于 URL 过滤
+    - "example.com"
+
+request:
+  method: "GET"                          # 可选：GET / POST
+  type: "static"                         # 可选：static / api / dynamic
+  headers:                               # 请求头；Token、Referer、Accept 都可以写这里
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    Referer: "https://example.com"
+    Authorization: ""                    # 示例：Bearer your_token
+  cookies: {}                            # Cookie 登录态，例如 sessionid: "xxx"
+  params: {}                             # GET 默认参数
+  payload: {}                            # POST JSON body
+  encoding: "auto"                       # 可选：auto / utf-8 / gbk / gb2312
+  timeout:
+    connect: 10
+    read: 30
+
+auth:
+  enabled: false
+  type: "none"                           # 配置协议可选：none / cookie / bearer_token / api_key / form_login / scan_login
+  token_header: "Authorization"          # bearer_token 时常用 Authorization
+  token_prefix: "Bearer"                 # 示例：Bearer
+  api_key_name: "X-API-Key"              # api_key 时的 header 或参数名
+  api_key_in: "header"                   # 可选：header / query
+  cookie_file: "data/state/cookies.json" # 后续可用于浏览器登录态保存
+  login_url: ""                          # form_login 时使用
+  username_field: "username"
+  password_field: "password"
+  submit_selector: "button[type=submit]"
+  # 注意：扫码登录适合人工介入保存 Cookie，不建议做绕过式自动化。
+
+browser:
+  enabled: false                         # true 时启用 Playwright 动态渲染
+  engine: "chromium"                     # 可选：chromium / firefox / webkit
+  headless: true                         # true 无头；false 可显示浏览器窗口
+  wait_until: "networkidle"              # 可选：load / domcontentloaded / networkidle
+  wait_selector: ""                      # 等待某个元素出现，例如 ".comment-list"
+  wait_timeout: 15000                    # 毫秒
+  viewport:
+    width: 1366
+    height: 768
+  user_agent: ""                         # 留空使用浏览器默认 UA
+  actions:                               # 动态页面动作，可组合
+    - type: "wait"                       # 可选动作：wait / scroll / click / fill
+      seconds: 1
+    - type: "scroll"
+      times: 3
+      pause: 1
+    # - type: "click"
+    #   selector: "button.load-more"
+    # - type: "fill"
+    #   selector: "input[name=q]"
+    #   value: "关键词"
+
+pagination:
+  enabled: true
+  type: "page_param"                     # 可选：none / page_param / url_template / next_link / cursor
+  page_param: "page"                     # page_param：页码参数名
+  start_page: 1
+  end_page: 5
+  url_template: "https://example.com/list/{page}" # url_template：{page} 会被替换
+  next_page_selector: "a.next"           # next_link：下一页按钮 CSS
+  max_pages: 10                          # next_link / cursor 最大页数
+  cursor_param: "cursor"                 # cursor：请求参数名，例如 cursor / last_id / max_id
+  cursor_start: ""                       # cursor 初始值，空表示第一页不带 cursor
+  next_cursor_path: "$.data.next_cursor" # cursor：从响应 JSON 中取下一页游标
+  stop_when_empty_path: "$.data.items"   # 协议字段，后续可用作停止判断
+  # 无限滚动属于 dynamic + browser.actions.scroll；若页面滚动后 HTML 中出现更多节点，照常用 list.fields 提取。
+
+list:
+  item_selector: ".item"                 # 列表项 CSS；留空表示整页按一个对象解析
+  fields:
+    title:
+      selector: ".title::text"           # CSS 文本
+      required: true
+    detail_url:
+      selector: "a::attr(href)"          # CSS 属性
+      transform: "absolute_url"          # 可选：absolute_url
+    publish_time:
+      mode: "xpath"                      # 可选：css / xpath / regex
+      selector: ".//time/text()"
+    phone:
+      mode: "regex"
+      selector: "\\d{3,4}-\\d{7,8}"
+    images:
+      selector: "img::attr(src)"
+      many: true                         # true 返回列表
+      transform: "absolute_url"
+    content:
+      selector: ".content p::text"
+      many: true
+      join: "\n"                         # many=true 时可合并为字符串
+
+detail:
+  enabled: false                         # true：根据列表页字段进入详情页
+  url_field: "detail_url"                # 详情页 URL 字段
+  keep_on_detail_failed: true            # 详情页失败时是否保留列表页数据
+  fields:
+    content:
+      selector: ".article p::text"
+      many: true
+      join: "\n"
+    author:
+      selector: ".author::text"
+
+api:
+  enabled: false                         # request.type=api 时通常设 true
+  data_path: "$.data.items"              # 列表数据路径；数组接口可写 "$"
+  fields:
+    id: "$.id"
+    title: "$.title"
+    content: "$.content"
+    user_name: "$.user.name"
+    image_urls: "$.images[*].url"
+
+media:
+  enabled: false                         # true：保存图片/音频/视频/字幕/附件
+  output_dir: "data/media"
+  skip_existing: true
+  parse_attachments: false               # true：下载后解析 PDF / docx / xlsx / csv / txt
+  parse_config:
+    max_chars: 200000                    # 每个附件最多写入结果的字符数
+    encoding: "utf-8"
+  subtitle_encoding: "utf-8"
+  resources:
+    - name: "images"
+      type: "image"                      # 可选：image / audio / video / subtitle / attachment / file
+      url_fields: ["images", "image_url"]
+      filename_prefix: "img"
+      default_ext: ".jpg"
+    - name: "subtitles"
+      type: "subtitle"
+      url_fields: ["subtitle_url"]
+      filename_prefix: "subtitle"
+      default_ext: ".vtt"
+    - name: "attachments"
+      type: "attachment"
+      url_fields: ["pdf_url", "doc_url"]
+      filename_prefix: "attachment"
+      default_ext: ".bin"
+      parse: true                        # 对该资源启用附件解析
+      include_text: true                 # true：把解析文本写进结果字段 attachments_text
+    - name: "auto_media"
+      type: "file"
+      auto_extract: false                # true：从所有字段文本中自动识别 URL
+      types: ["image", "audio", "video", "subtitle"]
+
+cleaning:
+  strip: true
+  normalize_space: true
+  html_unescape: true
+  remove_tracking_params: true
+  # 协议参考：datetime_fields / number_fields / markdown_to_text / html_to_text 可作为未来扩展。
+
+dedupe:
+  enabled: true
+  type: "persistent"                     # 可选：memory / file / persistent
+  key_fields: ["detail_url"]             # 业务去重字段；为空则按整条数据 hash
+  path: "data/state/all_options_dedupe.txt"
+  # 协议参考：bloom / redis 可作为后续大规模扩展。
+
+filters:
+  enabled: false
+  allow_url_patterns: []                 # 协议字段：允许 URL 正则
+  deny_url_patterns: []                  # 协议字段：拒绝 URL 正则
+  required_fields: ["title"]             # 协议字段：缺字段过滤
+  max_depth: 2                           # 协议字段：多级抓取深度限制
+
+rate_limit:
+  delay_min: 1
+  delay_max: 3
+  concurrency: 1                         # 当前引擎是串行；该字段保留给后续并发
+  adaptive: false                        # 协议字段：动态限速
+
+retry:
+  times: 3
+  backoff: 1
+  retry_status: [429, 500, 502, 503, 504]
+
+resume:
+  enabled: true                          # true：记录完成/失败 URL，支持失败续跑
+  retry_failed_first: true               # true：下次运行优先跑失败队列
+  clear_failed_on_success: true          # 当前保留协议字段
+  dir: "data/state"
+  completed_path: "data/state/all_options_completed_urls.txt"
+  failed_path: "data/state/all_options_failed.jsonl"
+
+anti_bot:
+  enabled: false
+  user_agent_pool: []                    # 协议字段：UA 池
+  proxy:
+    enabled: false
+    type: "http"                         # 可选参考：http / https / socks5
+    pool: []
+    rotate: true
+  random_headers: false
+  fingerprint:
+    enabled: false                       # 协议字段：浏览器指纹配置，需动态页面支持
+  captcha:
+    mode: "manual"                       # 建议：manual；不默认提供绕过验证码能力
+
+storage:
+  type: "jsonl"                          # 当前可用：jsonl / csv / sqlite
+  path: "data/output/all_options.jsonl"
+  table: "items"
+  # 协议参考：excel / parquet / mysql / postgres / elasticsearch / minio / oss
+
+schedule:
+  enabled: false
+  type: "once"                           # 协议参考：once / interval / cron
+  interval_minutes: 60
+  cron: ""
+
+logging:
+  enabled: true
+  level: "INFO"                          # 协议参考：DEBUG / INFO / WARNING / ERROR
+  dir: "data/logs"
+  request_log: "data/logs/requests.log"
+  error_log: "data/logs/errors.log"
+  summary_log: "data/logs/summary.log"
+
+monitoring:
+  enabled: false
+  fail_rate_threshold: 0.3
+  notify:
+    type: "console"                      # 协议参考：console / email / webhook
+    webhook_url: ""

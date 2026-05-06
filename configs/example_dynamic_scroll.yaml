@@ -1,0 +1,66 @@
+task:
+  name: "dynamic-scroll-example"
+  purpose: "动态页面采集"
+
+target:
+  site_name: "example"
+  base_url: "https://example.com"
+  entry_urls:
+    - "https://example.com/feed"
+
+request:
+  method: "GET"
+  type: "dynamic"
+  headers:
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+
+browser:
+  enabled: true
+  engine: "chromium"
+  headless: true
+  wait_until: "networkidle"
+  wait_selector: ".feed-item"
+  actions:
+    - type: "scroll"
+      times: 5
+      pause: 1
+
+pagination:
+  enabled: false
+  type: "none"
+
+list:
+  item_selector: ".feed-item"
+  fields:
+    title:
+      selector: ".title::text"
+    detail_url:
+      selector: "a::attr(href)"
+      transform: "absolute_url"
+    image_url:
+      selector: "img::attr(src)"
+      transform: "absolute_url"
+
+media:
+  enabled: true
+  output_dir: "data/media/dynamic_feed"
+  resources:
+    - name: "images"
+      type: "image"
+      url_fields: ["image_url"]
+      filename_prefix: "feed"
+
+dedupe:
+  enabled: true
+  type: "persistent"
+  key_fields: ["detail_url"]
+  path: "data/state/dynamic_scroll_dedupe.txt"
+
+storage:
+  type: "jsonl"
+  path: "data/output/dynamic_scroll.jsonl"
+
+rate_limit:
+  delay_min: 1
+  delay_max: 2
+

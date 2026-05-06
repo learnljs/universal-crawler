@@ -1,0 +1,74 @@
+task:
+  name: "example-static"
+  purpose: "信息采集"
+  description: "静态 HTML 列表页示例"
+
+target:
+  site_name: "example"
+  base_url: "https://example.com"
+  entry_urls:
+    - "https://example.com"
+  allowed_domains:
+    - "example.com"
+
+request:
+  method: "GET"
+  type: "static"
+  headers:
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+  encoding: "auto"
+  timeout:
+    connect: 10
+    read: 30
+
+pagination:
+  enabled: false
+  type: "none"
+
+list:
+  item_selector: ""
+  fields:
+    title:
+      selector: "h1::text"
+      required: true
+    intro:
+      selector: "p::text"
+      many: true
+      join: " "
+
+detail:
+  enabled: false
+  url_field: "detail_url"
+  keep_on_detail_failed: true
+  fields: {}
+
+cleaning:
+  strip: true
+  normalize_space: true
+  html_unescape: true
+  remove_tracking_params: true
+
+dedupe:
+  enabled: true
+  key_fields:
+    - "_source_url"
+
+rate_limit:
+  delay_min: 1
+  delay_max: 2
+  concurrency: 1
+
+retry:
+  times: 2
+  backoff: 1
+  retry_status:
+    - 429
+    - 500
+    - 502
+    - 503
+    - 504
+
+storage:
+  type: "jsonl"
+  path: "data/output/example_static.jsonl"
+  table: "items"

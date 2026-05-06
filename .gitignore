@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+data/logs/
+data/state/
+data/tmp_parse_test/
+data/media/

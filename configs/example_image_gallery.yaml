@@ -1,0 +1,68 @@
+task:
+  name: "image-gallery-example"
+  purpose: "图片图集采集"
+
+target:
+  site_name: "gallery"
+  base_url: "https://example.com"
+  entry_urls:
+    - "https://example.com/gallery"
+
+request:
+  method: "GET"
+  type: "static"
+  headers:
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+
+pagination:
+  enabled: true
+  type: "page_param"
+  page_param: "page"
+  start_page: 1
+  end_page: 3
+
+list:
+  item_selector: ".gallery-item"
+  fields:
+    title:
+      selector: ".title::text"
+    detail_url:
+      selector: "a::attr(href)"
+      transform: "absolute_url"
+    image_urls:
+      selector: "img::attr(src)"
+      many: true
+      transform: "absolute_url"
+
+detail:
+  enabled: true
+  url_field: "detail_url"
+  fields:
+    image_urls:
+      selector: ".photo-list img::attr(src)"
+      many: true
+      transform: "absolute_url"
+
+media:
+  enabled: true
+  output_dir: "data/media/gallery"
+  resources:
+    - name: "images"
+      type: "image"
+      url_fields: ["image_urls"]
+      filename_prefix: "gallery"
+
+dedupe:
+  enabled: true
+  type: "persistent"
+  key_fields: ["detail_url"]
+  path: "data/state/image_gallery_dedupe.txt"
+
+storage:
+  type: "csv"
+  path: "data/output/image_gallery.csv"
+
+rate_limit:
+  delay_min: 1
+  delay_max: 2
+

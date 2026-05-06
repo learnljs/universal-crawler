@@ -1,0 +1,170 @@
+task:
+  name: "your-task-name"
+  purpose: "信息采集"
+  description: "这里写任务说明"
+
+target:
+  site_name: "目标站点名称"
+  base_url: "https://example.com"
+  entry_urls:
+    - "https://example.com/list?page=1"
+  allowed_domains:
+    - "example.com"
+
+request:
+  method: "GET"
+  type: "static"  # static / api / dynamic
+  headers:
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+  cookies: {}
+  params: {}
+  payload: {}
+  encoding: "auto"
+  timeout:
+    connect: 10
+    read: 30
+
+auth:
+  enabled: false
+  type: "none"  # none / cookie / bearer_token / api_key / form_login / scan_login
+
+browser:
+  enabled: false
+  engine: "chromium"  # chromium / firefox / webkit
+  headless: true
+  wait_until: "networkidle"  # load / domcontentloaded / networkidle
+  wait_selector: ""
+  actions:
+    - type: "scroll"  # wait / scroll / click / fill
+      times: 3
+      pause: 1
+
+pagination:
+  enabled: true
+  type: "page_param"  # none / page_param / url_template / next_link / cursor
+  page_param: "page"
+  start_page: 1
+  end_page: 10
+  url_template: "https://example.com/list/{page}"
+  next_page_selector: "a.next"
+  max_pages: 10
+  cursor_param: "cursor"
+  cursor_start: ""
+  next_cursor_path: "$.data.next_cursor"
+  stop_when_empty_path: "$.data.items"
+
+list:
+  item_selector: ".item"
+  fields:
+    title:
+      selector: ".title::text"
+      required: true
+    detail_url:
+      selector: "a::attr(href)"
+      transform: "absolute_url"
+    publish_time:
+      selector: ".time::text"
+
+detail:
+  enabled: false
+  url_field: "detail_url"
+  keep_on_detail_failed: true
+  fields:
+    title:
+      selector: "h1::text"
+    content:
+      selector: ".content p::text"
+      many: true
+      join: "\n"
+
+api:
+  enabled: false
+  data_path: "$.data.items"
+  fields:
+    title: "$.title"
+    url: "$.url"
+
+media:
+  enabled: false
+  output_dir: "data/media"
+  skip_existing: true
+  parse_attachments: false
+  parse_config:
+    max_chars: 200000
+  resources:
+    - name: "images"
+      type: "image"  # image / audio / video / subtitle / attachment / file
+      url_fields: ["image_url", "image_urls"]
+      filename_prefix: "img"
+    - name: "attachments"
+      type: "attachment"
+      url_fields: ["pdf_url", "word_url", "excel_url"]
+      filename_prefix: "attachment"
+      parse: true
+      include_text: true
+
+cleaning:
+  strip: true
+  normalize_space: true
+  html_unescape: true
+  remove_tracking_params: true
+
+dedupe:
+  enabled: true
+  type: "persistent"  # memory / file / persistent
+  key_fields:
+    - "detail_url"
+  path: "data/state/template_dedupe.txt"
+
+anti_bot:
+  enabled: false
+  user_agent_pool: []
+  proxy:
+    enabled: false
+    type: "http"  # http / https / socks5
+    pool: []
+    rotate: true
+  captcha:
+    mode: "manual"
+
+resume:
+  enabled: true
+  retry_failed_first: true
+  clear_failed_on_success: true
+  dir: "data/state"
+  completed_path: "data/state/template_completed_urls.txt"
+  failed_path: "data/state/template_failed.jsonl"
+
+rate_limit:
+  delay_min: 1
+  delay_max: 3
+  concurrency: 1
+
+retry:
+  times: 3
+  backoff: 1
+  retry_status:
+    - 429
+    - 500
+    - 502
+    - 503
+    - 504
+
+storage:
+  type: "jsonl"  # jsonl / csv / sqlite
+  path: "data/output/items.jsonl"
+  table: "items"
+
+schedule:
+  enabled: false
+  type: "once"  # once / interval / cron
+  interval_minutes: 60
+  cron: ""
+
+logging:
+  enabled: true
+  level: "INFO"
+  dir: "data/logs"
+  request_log: "data/logs/template_requests.jsonl"
+  error_log: "data/logs/template_errors.jsonl"
+  summary_log: "data/logs/template_summary.jsonl"

@@ -1,0 +1,61 @@
+task:
+  name: "video-subtitle-example"
+  purpose: "视频字幕采集"
+  description: "字幕直链示例：抓 vtt/srt/ass 并自动转纯文本"
+
+target:
+  site_name: "video-site"
+  base_url: "https://example.com"
+  entry_urls:
+    - "https://example.com/video/123"
+
+request:
+  method: "GET"
+  type: "static"
+  headers:
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    Referer: "https://example.com"
+
+pagination:
+  enabled: false
+  type: "none"
+
+list:
+  item_selector: ""
+  fields:
+    title:
+      selector: "h1::text"
+    subtitle_url:
+      mode: "regex"
+      selector: "https?://[^\"'\\s]+\\.(?:vtt|srt|ass)(?:\\?[^\"'\\s]*)?"
+    video_url:
+      mode: "regex"
+      selector: "https?://[^\"'\\s]+\\.(?:mp4|m3u8)(?:\\?[^\"'\\s]*)?"
+
+media:
+  enabled: true
+  output_dir: "data/media/video_subtitle"
+  skip_existing: true
+  subtitle_encoding: "utf-8"
+  resources:
+    - name: "subtitles"
+      type: "subtitle"
+      url_fields: ["subtitle_url"]
+      filename_prefix: "subtitle"
+      default_ext: ".vtt"
+    - name: "videos"
+      type: "video"
+      url_fields: ["video_url"]
+      filename_prefix: "video"
+      default_ext: ".mp4"
+
+dedupe:
+  enabled: true
+  type: "persistent"
+  key_fields: ["subtitle_url"]
+  path: "data/state/video_subtitle_dedupe.txt"
+
+storage:
+  type: "jsonl"
+  path: "data/output/video_subtitle.jsonl"
+
